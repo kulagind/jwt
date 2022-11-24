@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"jwt/internal/models"
 	"jwt/pkg/helpers/utils"
 	"time"
 
@@ -36,4 +37,15 @@ func (repo *UserRepo) Create(
 		return err
 	}
 	return nil
+}
+
+func (repo *UserRepo) FindById(ctx context.Context, id string) (*models.UserResponse, error) {
+	user := &models.UserResponse{}
+	err := repo.db.QueryRow(ctx, `
+		select id, email, name from users where id=$1 limit 1;
+	`, id).Scan(&user.Id, &user.Email, &user.Name)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
