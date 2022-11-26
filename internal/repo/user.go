@@ -7,41 +7,55 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type UserRepo struct {
-	db *pgxpool.Pool
+type userRepo struct{}
+
+var userRepoSingleton *userRepo
+
+func GetUserRepo() *userRepo {
+	if userRepoSingleton == nil {
+		lock.Lock()
+		defer lock.Unlock()
+		if userRepoSingleton == nil {
+			userRepoSingleton = &userRepo{}
+		}
+	}
+
+	return userRepoSingleton
 }
 
-func (repo *UserRepo) Create(
+func (r *userRepo) Create(
 	ctx context.Context,
-	name string,
-	email string,
-	password string,
-) error {
-	_, err := repo.db.Exec(ctx, `
+	candidate *models.User,
+) (*models.UserResponse, error) {
+	newId := uuid.NewString()
+	_, err := getInstance().Db.Exec(ctx, `
 			insert into users 
 			(id, email, password, name, tokenhash, created_at, updated_at) 
 			values ($1, $2, $3, $4, $5, $6, $7)
 		`,
-		uuid.NewString(),
-		email,
-		password,
-		name,
+		newId,
+		candidate.Email,
+		candidate.Password,
+		candidate.Name,
 		utils.GenerateRandomString(15),
 		time.Now(),
 		time.Now(),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &models.UserResponse{
+		Id:    newId,
+		Name:  candidate.Name,
+		Email: candidate.Email,
+	}, nil
 }
 
-func (repo *UserRepo) FindById(ctx context.Context, id string) (*models.UserResponse, error) {
+func (r *userRepo) FindById(ctx context.Context, id string) (*models.UserResponse, error) {
 	user := &models.UserResponse{}
-	err := repo.db.QueryRow(ctx, `
+	err := getInstance().Db.QueryRow(ctx, `
 		select id, email, name from users where id=$1 limit 1;
 	`, id).Scan(&user.Id, &user.Email, &user.Name)
 	if err != nil {

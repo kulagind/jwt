@@ -3,7 +3,7 @@ package models
 import "time"
 
 type User struct {
-	Id        string    `json:"id" validate:"required" sql:"id"`
+	Id        string    `json:"id" sql:"id"`
 	Email     string    `json:"email" validate:"required" sql:"email"`
 	Password  string    `json:"password" validate:"required" sql:"password"`
 	Name      string    `json:"name" validate:"required" sql:"name"`
@@ -16,4 +16,11 @@ type UserResponse struct {
 	Id    string `json:"id"`
 	Email string `json:"email"`
 	Name  string `json:"name"`
+}
+
+func (u *User) Valid() bool {
+	if u.Name == "" || u.Email == "" || u.Password == "" {
+		return false
+	}
+	return true
 }
