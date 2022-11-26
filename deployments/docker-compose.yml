@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  pgdb:
+    image: "postgres"
+    container_name: "$DB_CONTAINER"
+    restart: "always"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=$DB_USER
+      - POSTGRES_PASSWORD=$DB_PWD
+    ports:
+      - "$DB_PORT:5432"
+    volumes:
+      - $DB_VOLUME_DATA:/var/lib/postgresql/data
+
+  auth-app:
+    build: ../.
+    container_name: "$AUTH_CONTAINER"
+    restart: "always"
+    env_file:
+      - .env
+    ports:
+      - $AUTH_SERVICE_PORT:8080
