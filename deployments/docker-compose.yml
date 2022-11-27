@@ -2,8 +2,8 @@ version: "3.8"
 
 services:
   pgdb:
-    image: "postgres"
-    container_name: "$DB_CONTAINER"
+    image: postgres:alpine
+    container_name: "pgdb"
     restart: "always"
     env_file:
       - .env
@@ -22,4 +22,6 @@ services:
     env_file:
       - .env
     ports:
-      - $AUTH_SERVICE_PORT:8080
+      - "$AUTH_SERVICE_PORT:8080"
+    depends_on:
+      - pgdb

@@ -13,7 +13,11 @@ import (
 	"jwt/pkg/helpers/pg"
 
 	"github.com/gorilla/mux"
-	"github.com/pressly/goose"
+	"github.com/pressly/goose/v3"
+
+	_ "jwt/internal/migrations"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -28,11 +32,11 @@ func main() {
 
 func connectDb() {
 	cfg := &pg.Config{}
-	cfg.DbName = "db_test"
-	cfg.Host = "localhost"
-	cfg.Port = "54320"
-	cfg.Username = "db_user"
-	cfg.Password = "pwd123"
+	cfg.DbName = os.Getenv("DB_USER")
+	cfg.Host = "host.docker.internal"
+	cfg.Port = os.Getenv("DB_PORT")
+	cfg.Username = os.Getenv("DB_USER")
+	cfg.Password = os.Getenv("DB_PWD")
 	cfg.Timeout = 5
 
 	poolConfig, err := pg.NewPoolConfig(cfg)
@@ -48,7 +52,7 @@ func connectDb() {
 	if err != nil {
 		panic(err)
 	}
-	err = goose.Up(mdb, "internal/migrations")
+	err = goose.Up(mdb, "/")
 	if err != nil {
 		panic(err)
 	}
