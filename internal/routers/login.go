@@ -3,7 +3,6 @@ package routers
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"jwt/internal/models"
 	"jwt/internal/repo"
 	"jwt/internal/services"
@@ -24,48 +23,27 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := 
-
-	userJson, err := json.Marshal(user)
+	accessToken, err := services.GenerateAccessToken(user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(userJson)
-}
-
-func _create(w http.ResponseWriter, r *http.Request) {
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	r.Body.Close()
-
-	var candidate models.User
-	if err := json.Unmarshal(data, &candidate); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if !candidate.Valid() {
-		http.Error(w, "Invalid body fields", http.StatusBadRequest)
-		return
-	}
-
-	user, err := repo.GetUserRepo().Create(context.Background(), &candidate)
+	refreshToken, err := services.GenerateRefreshToken(user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	userJson, err := json.Marshal(user)
+	tokens := models.TokensResponse{
+		AccessToken:  models.AccessToken{Access_token: accessToken},
+		RefreshToken: models.RefreshToken{Refresh_token: refreshToken},
+	}
+	response, err := json.Marshal(tokens)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	w.Write(userJson)
+	w.Write(response)
 }
