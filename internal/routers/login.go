@@ -6,23 +6,25 @@ import (
 	"io/ioutil"
 	"jwt/internal/models"
 	"jwt/internal/repo"
+	"jwt/internal/services"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
-func handleUsers(router *mux.Router) {
-	router.HandleFunc("/{id}", _getById).Methods(http.MethodGet)
-	router.HandleFunc("", _create).Methods(http.MethodPost)
-}
+func login(w http.ResponseWriter, r *http.Request) {
+	candidate := r.Context().Value(models.UserToken{}).(models.User)
 
-func _getById(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	user, err := repo.GetUserRepo().FindBy(context.Background(), "id", vars["id"])
+	user, err := repo.GetUserRepo().PrivateFindBy(context.Background(), "email", candidate.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	if isAuth := services.Authenticate(&candidate, user); !isAuth {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	accessToken, err := 
 
 	userJson, err := json.Marshal(user)
 	if err != nil {

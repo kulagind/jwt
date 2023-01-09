@@ -38,7 +38,7 @@ func (r *userRepo) Create(
 		newId,
 		candidate.Email,
 		candidate.Password,
-		candidate.Name,
+		"",
 		utils.GenerateRandomString(15),
 		time.Now(),
 		time.Now(),
@@ -53,11 +53,22 @@ func (r *userRepo) Create(
 	}, nil
 }
 
-func (r *userRepo) FindById(ctx context.Context, id string) (*models.UserResponse, error) {
+func (r *userRepo) FindBy(ctx context.Context, field string, value string) (*models.UserResponse, error) {
 	user := &models.UserResponse{}
 	err := getInstance().Db.QueryRow(ctx, `
-		select id, email, name from users where id=$1 limit 1;
-	`, id).Scan(&user.Id, &user.Email, &user.Name)
+		select id, email, name from users where $1=$2 limit 1;
+	`, field, value).Scan(&user.Id, &user.Email, &user.Name)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (r *userRepo) PrivateFindBy(ctx context.Context, field string, value string) (*models.User, error) {
+	user := &models.User{}
+	err := getInstance().Db.QueryRow(ctx, `
+		select id, email, name, password, tokenhash, created_at, updated_at from users where $1=$2 limit 1;
+	`, field, value).Scan(&user.Id, &user.Email, &user.Name, &user.Password, &user.TokenHash, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
