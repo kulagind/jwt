@@ -53,6 +53,18 @@ func (r *userRepo) Create(
 	}, nil
 }
 
+func (r *userRepo) UpdateTokenhash(ctx context.Context, user *models.User) error {
+	tokenhash := utils.GenerateRandomString(15)
+	_, err := getInstance().Db.Exec(ctx, `
+		update users set tokenhash=$1 where id=$2;
+	`, tokenhash, user.Id)
+	if err != nil {
+		return err
+	}
+	user.TokenHash = tokenhash
+	return nil
+}
+
 func (r *userRepo) FindBy(ctx context.Context, field string, value string) (*models.UserResponse, error) {
 	user := &models.UserResponse{}
 	err := getInstance().Db.QueryRow(ctx, `

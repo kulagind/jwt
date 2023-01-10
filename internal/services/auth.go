@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"jwt/internal/models"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -65,4 +66,12 @@ func GenerateRefreshToken(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
 	return token.SignedString(signKey)
+}
+
+func ParseAuthHeader(header string) (string, error) {
+	parts := strings.Split(header, " ")
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		return "", errors.New("Unauthorized")
+	}
+	return parts[1], nil
 }

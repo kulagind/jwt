@@ -23,6 +23,12 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = repo.GetUserRepo().UpdateTokenhash(context.Background(), user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	accessToken, err := services.GenerateAccessToken(user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
