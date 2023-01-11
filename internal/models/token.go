@@ -4,7 +4,7 @@ type AccessTokenContextToken struct{}
 
 type RefreshTokenContextToken struct{}
 
-type RequireRenewalContextToken struct{}
+type RequiredRenewalContextToken struct{}
 
 type RepoUpdatedTokens struct {
 	OldToken string `validate:"required" sql:"old_token"`

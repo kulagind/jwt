@@ -56,18 +56,18 @@ func ValidateRefreshToken(next http.Handler) http.Handler {
 			return
 		}
 
-		requireRenewal := false
+		requiredRenewalToken := ""
 		if claims.ExpiresAt < time.Now().Local().Unix() {
 			err = repo.GetTokenRepo().CheckRefresh(context.Background(), refreshCookie.Value)
 			if err != nil {
 				http.Error(w, "refresh token is blocked. Please login using email and password again", http.StatusUnauthorized)
 				return
 			}
-			requireRenewal = true
+			requiredRenewalToken = refreshCookie.Value
 		}
 
 		ctx := context.WithValue(r.Context(), models.UserContextToken{}, candidate)
-		ctx = context.WithValue(ctx, models.RequireRenewalContextToken{}, requireRenewal)
+		ctx = context.WithValue(ctx, models.RequiredRenewalContextToken{}, requiredRenewalToken)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
