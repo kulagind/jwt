@@ -10,7 +10,7 @@ import (
 )
 
 func login(w http.ResponseWriter, r *http.Request) {
-	candidate := r.Context().Value(models.UserToken{}).(models.User)
+	candidate := r.Context().Value(models.UserContextToken{}).(models.User)
 
 	user, err := repo.GetUserRepo().PrivateFindBy(context.Background(), "email", candidate.Email)
 	if err != nil {

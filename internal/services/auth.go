@@ -75,3 +75,7 @@ func ParseAuthHeader(header string) (string, error) {
 	}
 	return parts[1], nil
 }
+
+func UpdateRefreshToken(oldToken string) (string, error) {
+
+}

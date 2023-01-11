@@ -11,7 +11,7 @@ import (
 )
 
 func signUp(w http.ResponseWriter, r *http.Request) {
-	candidate := r.Context().Value(models.UserToken{}).(models.User)
+	candidate := r.Context().Value(models.UserContextToken{}).(models.User)
 	hashedPass, err := bcrypt.GenerateFromPassword([]byte(candidate.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

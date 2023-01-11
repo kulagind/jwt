@@ -1,5 +1,16 @@
 package models
 
-type AccessTokenToken struct{}
+type AccessTokenContextToken struct{}
 
-type RefreshTokenToken struct{}
+type RefreshTokenContextToken struct{}
+
+type RequireRenewalContextToken struct{}
+
+type RepoUpdatedTokens struct {
+	OldToken string `validate:"required" sql:"old_token"`
+	NewToken string `validate:"required" sql:"new_token"`
+}
+
+type RepoBlocked struct {
+	Token string `validate:"required" sql:"token"`
+}

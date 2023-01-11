@@ -49,11 +49,6 @@ func ValidateRefreshToken(next http.Handler) http.Handler {
 			return
 		}
 
-		if claims.ExpiresAt < time.Now().Local().Unix() {
-			http.Error(w, "refresh token is expired. Please login using email and password again", http.StatusForbidden)
-			return
-		}
-
 		var candidate *models.User
 		candidate, err = repo.GetUserRepo().PrivateFindBy(context.Background(), "id", claims.UserID)
 		if err != nil || claims.TokenHash != candidate.TokenHash {
@@ -61,7 +56,18 @@ func ValidateRefreshToken(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), models.UserToken{}, candidate)
+		requireRenewal := false
+		if claims.ExpiresAt < time.Now().Local().Unix() {
+			err = repo.GetTokenRepo().CheckRefresh(context.Background(), refreshCookie.Value)
+			if err != nil {
+				http.Error(w, "refresh token is blocked. Please login using email and password again", http.StatusUnauthorized)
+				return
+			}
+			requireRenewal = true
+		}
+
+		ctx := context.WithValue(r.Context(), models.UserContextToken{}, candidate)
+		ctx = context.WithValue(ctx, models.RequireRenewalContextToken{}, requireRenewal)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)

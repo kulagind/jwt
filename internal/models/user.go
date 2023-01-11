@@ -12,7 +12,7 @@ type User struct {
 	UpdatedAt time.Time `json:"updatedAt" sql:"updated_at"`
 }
 
-type UserToken struct{}
+type UserContextToken struct{}
 
 type UserResponse struct {
 	Id    string `json:"id"`
