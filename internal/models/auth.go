@@ -24,6 +24,5 @@ type RefreshToken struct {
 }
 
 type TokensResponse struct {
-	RefreshToken
 	AccessToken
 }

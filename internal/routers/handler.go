@@ -8,10 +8,20 @@ import (
 )
 
 func HandleRequest(mux *mux.Router) {
-	// handleUsers(mux.PathPrefix("/users").Subrouter())
-	postRequests := mux.Methods(http.MethodPost).Subrouter()
-	postRequests.HandleFunc("/signup", signUp)
-	postRequests.HandleFunc("/login", login)
-	postRequests.Use(middlewares.ValidateUser)
+	// public API
+	publicRouter := mux.Methods(http.MethodPost).Subrouter()
+	publicRouter.HandleFunc("/signup", signUp)
+	publicRouter.HandleFunc("/login", login)
+	publicRouter.Use(middlewares.ValidateUser)
 
+	publicAccessRouter := mux.Methods(http.MethodPost).Subrouter()
+	publicAccessRouter.HandleFunc("/update_access", updateAccessToken)
+	publicAccessRouter.Use(middlewares.ValidateRefreshToken, middlewares.UpdateRefreshTokenIfRequired)
+
+	// private API
+	privateRouter := mux.PathPrefix("/private").Subrouter()
+	privateRouter.Use(middlewares.ValidateAccessToken)
+	usersRouter := privateRouter.PathPrefix("/user").Methods(http.MethodGet).Subrouter()
+	usersRouter.HandleFunc("", getCurrentUser)
+	usersRouter.HandleFunc("/:id", getUserById)
 }

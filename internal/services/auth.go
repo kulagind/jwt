@@ -3,7 +3,9 @@ package services
 import (
 	"errors"
 	"io/ioutil"
+	"jwt/internal/constants"
 	"jwt/internal/models"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -74,4 +76,12 @@ func ParseAuthHeader(header string) (string, error) {
 		return "", errors.New("Unauthorized")
 	}
 	return parts[1], nil
+}
+
+func GetRefreshCookie(token string) http.Cookie {
+	return http.Cookie{
+		HttpOnly: true,
+		Name:     constants.TokenCookieName,
+		Value:    token,
+	}
 }

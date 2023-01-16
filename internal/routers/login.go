@@ -42,14 +42,16 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokens := models.TokensResponse{
-		AccessToken:  models.AccessToken{Access_token: accessToken},
-		RefreshToken: models.RefreshToken{Refresh_token: refreshToken},
+		AccessToken: models.AccessToken{Access_token: accessToken},
 	}
 	response, err := json.Marshal(tokens)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	c := services.GetRefreshCookie(refreshToken)
+	http.SetCookie(w, &c)
 
 	w.Write(response)
 }

@@ -24,7 +24,14 @@ func UpdateRefreshTokenIfRequired(next http.Handler) http.Handler {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			repo.GetTokenRepo().UpdateRefresh(context.Background(), requiredRenewal, newRefreshToken)
+			err = repo.GetTokenRepo().UpdateRefresh(context.Background(), requiredRenewal, newRefreshToken)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			c := services.GetRefreshCookie(newRefreshToken)
+			http.SetCookie(w, &c)
 		}
 
 		next.ServeHTTP(w, r)
