@@ -7,12 +7,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 
 	"jwt/internal/repo"
 	"jwt/internal/routers"
 	"jwt/pkg/helpers/pg"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/pressly/goose/v3"
 
 	_ "jwt/internal/migrations"
@@ -21,6 +23,7 @@ import (
 )
 
 func main() {
+	loadEnv()
 	connectDb()
 
 	mux := mux.NewRouter()
@@ -28,6 +31,19 @@ func main() {
 
 	http.Handle("/", mux)
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func loadEnv() {
+	projectDirName := "jwt"
+	projectName := regexp.MustCompile(`^(.*` + projectDirName + `)`)
+	currentWorkDirectory, _ := os.Getwd()
+	rootPath := projectName.Find([]byte(currentWorkDirectory))
+
+	err := godotenv.Load(string(rootPath) + `/deployments/.env`)
+
+	if err != nil {
+		fmt.Println(".env file isn't found")
+	}
 }
 
 func connectDb() {
@@ -48,6 +64,7 @@ func connectDb() {
 	poolConfig.MaxConns = 5
 
 	mdb, _ := sql.Open("postgres", poolConfig.ConnString())
+	fmt.Println(poolConfig.ConnString())
 	err = mdb.Ping()
 	if err != nil {
 		panic(err)
