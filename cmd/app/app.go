@@ -64,7 +64,6 @@ func connectDb() {
 	poolConfig.MaxConns = 5
 
 	mdb, _ := sql.Open("postgres", poolConfig.ConnString())
-	fmt.Println(poolConfig.ConnString())
 	err = mdb.Ping()
 	if err != nil {
 		panic(err)
