@@ -21,6 +21,8 @@ services:
     restart: "always"
     env_file:
       - .env
+    environment:
+      APP_MODE: "prod"
     ports:
       - "$AUTH_SERVICE_PORT:8080"
     depends_on:

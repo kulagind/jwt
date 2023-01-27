@@ -7,11 +7,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 
 	"jwt/internal/repo"
 	"jwt/internal/routers"
 	"jwt/pkg/helpers/pg"
+	"jwt/pkg/helpers/utils"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -26,6 +26,7 @@ func main() {
 	loadEnv()
 	connectDb()
 
+	fmt.Println("Application mode:", os.Getenv("APP_MODE"))
 	mux := mux.NewRouter()
 	routers.HandleRequest(mux)
 
@@ -34,13 +35,7 @@ func main() {
 }
 
 func loadEnv() {
-	projectDirName := "jwt"
-	projectName := regexp.MustCompile(`^(.*` + projectDirName + `)`)
-	currentWorkDirectory, _ := os.Getwd()
-	rootPath := projectName.Find([]byte(currentWorkDirectory))
-
-	err := godotenv.Load(string(rootPath) + `/deployments/.env`)
-
+	err := godotenv.Load(utils.ResolveProjectPath("jwt") + `/deployments/.env`)
 	if err != nil {
 		fmt.Println(".env file isn't found")
 	}

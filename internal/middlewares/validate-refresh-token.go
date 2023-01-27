@@ -9,6 +9,7 @@ import (
 	"jwt/internal/repo"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -26,7 +27,9 @@ func ValidateRefreshToken(next http.Handler) http.Handler {
 			refreshCookie.Value,
 			&models.RefreshTokenCustomClaims{},
 			func(t *jwt.Token) (interface{}, error) {
-				pubBytes, err := ioutil.ReadFile(os.Getenv("REFRESH_TOKEN_PUBLIC_KEY_PATH"))
+				pubBytes, err := ioutil.ReadFile(
+					path.Join(constants.ProjectPath(), os.Getenv("REFRESH_TOKEN_PUBLIC_KEY_PATH")),
+				)
 				if err != nil {
 					return nil, errors.New("could not parse refresh token. please try again later")
 				}

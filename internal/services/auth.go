@@ -7,6 +7,7 @@ import (
 	"jwt/internal/models"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -30,7 +31,9 @@ func GenerateAccessToken(user *models.User) (string, error) {
 		},
 	}
 
-	signBytes, err := ioutil.ReadFile(os.Getenv("ACCESS_TOKEN_PRIVATE_KEY_PATH"))
+	signBytes, err := ioutil.ReadFile(
+		path.Join(constants.ProjectPath(), os.Getenv("ACCESS_TOKEN_PRIVATE_KEY_PATH")),
+	)
 	if err != nil {
 		return "", errors.New("could not generate access token. please try again later")
 	}
@@ -55,7 +58,9 @@ func GenerateRefreshToken(user *models.User) (string, error) {
 		},
 	}
 
-	signBytes, err := ioutil.ReadFile(os.Getenv("REFRESH_TOKEN_PRIVATE_KEY_PATH"))
+	signBytes, err := ioutil.ReadFile(
+		path.Join(constants.ProjectPath(), os.Getenv("REFRESH_TOKEN_PRIVATE_KEY_PATH")),
+	)
 	if err != nil {
 		return "", errors.New("could not generate refresh token. please try again later")
 	}
