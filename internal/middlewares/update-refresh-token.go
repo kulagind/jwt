@@ -5,6 +5,7 @@ import (
 	"jwt/internal/models"
 	"jwt/internal/repo"
 	"jwt/internal/services"
+	"jwt/pkg/helpers/utils"
 	"net/http"
 )
 
@@ -15,18 +16,18 @@ func UpdateRefreshTokenIfRequired(next http.Handler) http.Handler {
 		if requiredRenewal != "" {
 			err := repo.GetUserRepo().UpdateTokenhash(context.Background(), user)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 				return
 			}
 
 			newRefreshToken, err := services.GenerateRefreshToken(user)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 				return
 			}
 			err = repo.GetTokenRepo().UpdateRefresh(context.Background(), requiredRenewal, newRefreshToken)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 				return
 			}
 

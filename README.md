@@ -84,6 +84,16 @@ response:
 
 <br>
 
+# Internal error codes
+
+<code>-1</code> - Private error: Request parameters are incorrent
+<code>0</code> - Unextected error
+<code>1</code> - User already exists
+<code>2</code> - User with this email and password doesn't exist
+<code>3</code> - Access or refresh token is invalid
+<code>4</code> - Access token is expired (needed to refresh)
+<code>5</code> - Refresh token was blocked (need to login again)
+
 # How to run
 
 There will be a description about building and starting

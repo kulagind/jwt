@@ -9,9 +9,9 @@ RUN go mod tidy && \
 
 RUN mkdir -p /app/rsa && \
     openssl genrsa -out /app/rsa/access_token_private_key.pem 2048 && \
-    openssl rsa -in /app/rsa/access_token_private_key.pem -pubout -out /app/rsa/access_token_public_key.pem && \
+    openssl rsa -in /app/rsa/access_token_private_key.pem -outform PEM -pubout -out /app/rsa/access_token_public_key.pem && \
     openssl genrsa -out /app/rsa/refresh_token_private_key.pem 2048 && \
-    openssl rsa -in /app/rsa/refresh_token_private_key.pem -pubout -out /app/rsa/refresh_token_public_key.pem
+    openssl rsa -in /app/rsa/refresh_token_private_key.pem -outform PEM -pubout -out /app/rsa/refresh_token_public_key.pem
 
 
 FROM scratch

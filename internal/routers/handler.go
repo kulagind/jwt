@@ -23,5 +23,5 @@ func HandleRequest(mux *mux.Router) {
 	privateRouter.Use(middlewares.ValidateAccessToken)
 	usersRouter := privateRouter.PathPrefix("/user").Methods(http.MethodGet).Subrouter()
 	usersRouter.HandleFunc("", getCurrentUser)
-	usersRouter.HandleFunc("/:id", getUserById)
+	usersRouter.HandleFunc("/{id}", getUserById)
 }

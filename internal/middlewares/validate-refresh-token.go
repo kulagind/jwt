@@ -7,6 +7,7 @@ import (
 	"jwt/internal/constants"
 	"jwt/internal/models"
 	"jwt/internal/repo"
+	"jwt/pkg/helpers/utils"
 	"net/http"
 	"os"
 	"path"
@@ -19,7 +20,7 @@ func ValidateRefreshToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		refreshCookie, err := r.Cookie(constants.TokenCookieName)
 		if err != nil && refreshCookie.Value != "" {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			utils.WriteError(w, "Unauthorized", http.StatusUnauthorized, 3)
 			return
 		}
 
@@ -42,20 +43,20 @@ func ValidateRefreshToken(next http.Handler) http.Handler {
 			},
 		)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			utils.WriteError(w, "Unauthorized", http.StatusUnauthorized, 3)
 			return
 		}
 
 		claims, ok := token.Claims.(*models.RefreshTokenCustomClaims)
 		if !ok {
-			http.Error(w, "could not parse refresh token claims", http.StatusInternalServerError)
+			utils.WriteError(w, "could not parse refresh token claims", http.StatusInternalServerError, 0)
 			return
 		}
 
 		var candidate *models.User
 		candidate, err = repo.GetUserRepo().PrivateFindBy(context.Background(), "id", claims.UserID)
 		if err != nil || claims.TokenHash != candidate.TokenHash {
-			http.Error(w, "refresh token is incorrect", http.StatusUnauthorized)
+			utils.WriteError(w, "Unauthorized", http.StatusUnauthorized, 3)
 			return
 		}
 
@@ -63,7 +64,7 @@ func ValidateRefreshToken(next http.Handler) http.Handler {
 		if claims.ExpiresAt < time.Now().Local().Unix() {
 			err = repo.GetTokenRepo().CheckRefresh(context.Background(), refreshCookie.Value)
 			if err != nil {
-				http.Error(w, "refresh token is blocked. Please login using email and password again", http.StatusUnauthorized)
+				utils.WriteError(w, "refresh token is blocked", http.StatusUnauthorized, 5)
 				return
 			}
 			requiredRenewalToken = refreshCookie.Value

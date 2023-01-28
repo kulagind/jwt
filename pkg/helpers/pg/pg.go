@@ -2,9 +2,11 @@ package pg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -44,4 +46,12 @@ func NewConnection(poolConfig *pgxpool.Config) (*pgxpool.Pool, error) {
 	}
 
 	return conn, nil
+}
+
+func CheckSqlError(err error, code string) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) || err.Error() == code {
+		return true
+	}
+	return false
 }

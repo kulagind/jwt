@@ -6,6 +6,8 @@ import (
 	"jwt/internal/models"
 	"jwt/internal/repo"
 	"jwt/internal/services"
+	"jwt/pkg/helpers/pg"
+	"jwt/pkg/helpers/utils"
 	"net/http"
 )
 
@@ -14,30 +16,34 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	user, err := repo.GetUserRepo().PrivateFindBy(context.Background(), "email", candidate.Email)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		if pg.CheckSqlError(err, "no rows in result set") {
+			utils.WriteError(w, "User with this email and password doesn't exist", http.StatusUnauthorized, 2)
+			return
+		}
+		utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 		return
 	}
 
 	if isAuth := services.Authenticate(&candidate, user); !isAuth {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		utils.WriteError(w, "User with this email and password doesn't exist", http.StatusUnauthorized, 2)
 		return
 	}
 
 	err = repo.GetUserRepo().UpdateTokenhash(context.Background(), user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 		return
 	}
 
 	accessToken, err := services.GenerateAccessToken(user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 		return
 	}
 
 	refreshToken, err := services.GenerateRefreshToken(user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 		return
 	}
 
@@ -46,7 +52,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 	response, err := json.Marshal(tokens)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 		return
 	}
 

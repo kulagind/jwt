@@ -2,28 +2,27 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"jwt/internal/models"
 	"net/http"
 	"os"
 	"runtime/debug"
 )
 
-func WriteError(w http.ResponseWriter, message string, status int) {
+func WriteError(w http.ResponseWriter, message string, httpStatus int, internalCode int) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(status)
+	w.WriteHeader(httpStatus)
 
 	var stack string
 	if os.Getenv("APP_MODE") == "dev" {
 		stack = string(debug.Stack())
-		fmt.Println(stack)
 	}
 
 	customError := &models.ResponseError{
-		Message: message,
-		Status:  status,
-		Stack:   stack,
+		Message:      message,
+		Status:       httpStatus,
+		InternalCode: internalCode,
+		Stack:        stack,
 	}
 	errorJson, err := json.Marshal(customError)
 	if err != nil {
