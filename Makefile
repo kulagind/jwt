@@ -4,6 +4,10 @@ compose-up:
 watch:
 	air
 
+test:
+	make keys && \
+	go test ./... -v
+
 keys:
 	mkdir -p ./rsa && \
 	openssl genrsa -out ./rsa/access_token_private_key.pem 2048 && \

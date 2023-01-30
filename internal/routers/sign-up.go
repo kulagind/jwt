@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"jwt/internal/models"
 	"jwt/internal/repo"
+	"jwt/internal/services"
 	"jwt/pkg/helpers/pg"
 	"jwt/pkg/helpers/utils"
 	"net/http"
 
 	"github.com/jackc/pgerrcode"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func signUp(w http.ResponseWriter, r *http.Request) {
 	candidate := r.Context().Value(models.UserContextToken{}).(models.User)
-	hashedPass, err := bcrypt.GenerateFromPassword([]byte(candidate.Password), bcrypt.DefaultCost)
+	hashedPass, err := services.HashPassword(candidate.Password)
 	if err != nil {
 		utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 		return
@@ -23,7 +23,7 @@ func signUp(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	candidate.Password = string(hashedPass)
+	candidate.Password = hashedPass
 
 	user, err := repo.GetUserRepo().Create(context.Background(), &candidate)
 	if err != nil {

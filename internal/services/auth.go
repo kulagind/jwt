@@ -90,3 +90,11 @@ func GetRefreshCookie(token string) http.Cookie {
 		Value:    token,
 	}
 }
+
+func HashPassword(pass string) (string, error) {
+	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(encryptedPass), nil
+}
