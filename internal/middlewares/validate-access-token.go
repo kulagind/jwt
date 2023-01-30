@@ -2,18 +2,12 @@ package middlewares
 
 import (
 	"context"
-	"errors"
-	"jwt/internal/constants"
 	"jwt/internal/models"
 	"jwt/internal/repo"
 	"jwt/internal/services"
 	"jwt/pkg/helpers/utils"
 	"net/http"
-	"os"
-	"path"
 	"time"
-
-	"github.com/golang-jwt/jwt/v4"
 )
 
 func ValidateAccessToken(next http.Handler) http.Handler {
@@ -25,24 +19,7 @@ func ValidateAccessToken(next http.Handler) http.Handler {
 			return
 		}
 
-		token, err := jwt.ParseWithClaims(
-			headerToken,
-			&models.AccessTokenCustomClaims{},
-			func(t *jwt.Token) (interface{}, error) {
-				pubBytes, err := os.ReadFile(
-					path.Join(constants.ProjectPath(), os.Getenv("ACCESS_TOKEN_PUBLIC_KEY_PATH")),
-				)
-				if err != nil {
-					return nil, errors.New("could not parse access token. please try again later")
-				}
-
-				pubKey, err := jwt.ParseRSAPublicKeyFromPEM(pubBytes)
-				if err != nil {
-					return nil, errors.New("could not parse access token. please try again later")
-				}
-				return pubKey, nil
-			},
-		)
+		token, err := services.ParseAccessToken(headerToken)
 		if err != nil {
 			utils.WriteError(w, "Unauthorized", http.StatusUnauthorized, 3)
 			return

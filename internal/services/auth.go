@@ -98,3 +98,53 @@ func HashPassword(pass string) (string, error) {
 	}
 	return string(encryptedPass), nil
 }
+
+func ParseAccessToken(header string) (*jwt.Token, error) {
+	token, err := jwt.ParseWithClaims(
+		header,
+		&models.AccessTokenCustomClaims{},
+		func(t *jwt.Token) (interface{}, error) {
+			pubBytes, err := os.ReadFile(
+				path.Join(constants.ProjectPath(), os.Getenv("ACCESS_TOKEN_PUBLIC_KEY_PATH")),
+			)
+			if err != nil {
+				return nil, errors.New("could not parse access token. please try again later")
+			}
+
+			pubKey, err := jwt.ParseRSAPublicKeyFromPEM(pubBytes)
+			if err != nil {
+				return nil, errors.New("could not parse access token. please try again later")
+			}
+			return pubKey, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
+func ParseRefreshToken(refreshToken string) (*jwt.Token, error) {
+	token, err := jwt.ParseWithClaims(
+		refreshToken,
+		&models.RefreshTokenCustomClaims{},
+		func(t *jwt.Token) (interface{}, error) {
+			pubBytes, err := ioutil.ReadFile(
+				path.Join(constants.ProjectPath(), os.Getenv("REFRESH_TOKEN_PUBLIC_KEY_PATH")),
+			)
+			if err != nil {
+				return nil, errors.New("could not parse refresh token. please try again later")
+			}
+
+			pubKey, err := jwt.ParseRSAPublicKeyFromPEM(pubBytes)
+			if err != nil {
+				return nil, errors.New("could not parse refresh token. please try again later")
+			}
+			return pubKey, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}

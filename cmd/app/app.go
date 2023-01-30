@@ -10,11 +10,10 @@ import (
 
 	"jwt/internal/repo"
 	"jwt/internal/routers"
+	"jwt/internal/services"
 	"jwt/pkg/helpers/pg"
-	"jwt/pkg/helpers/utils"
 
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"github.com/pressly/goose/v3"
 
 	_ "jwt/internal/migrations"
@@ -23,7 +22,7 @@ import (
 )
 
 func main() {
-	loadEnv()
+	services.LoadEnv()
 	connectDb()
 
 	fmt.Println("Application mode:", os.Getenv("APP_MODE"))
@@ -32,13 +31,6 @@ func main() {
 
 	http.Handle("/", mux)
 	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func loadEnv() {
-	err := godotenv.Load(utils.ResolveProjectPath("jwt") + `/deployments/.env`)
-	if err != nil {
-		fmt.Println(".env file isn't found")
-	}
 }
 
 func connectDb() {
