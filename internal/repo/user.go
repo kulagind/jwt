@@ -26,17 +26,19 @@ func GetUserRepo() *userRepo {
 	return userRepoSingleton
 }
 
+const createUserQuery = `
+	insert into users 
+	(id, email, password, name, tokenhash, created_at, updated_at) 
+	values ($1, $2, $3, $4, $5, $6, $7)
+`
+
 func (r *userRepo) Create(
 	ctx context.Context,
 	candidate *models.User,
 ) (*models.UserResponse, error) {
 	newId := uuid.NewString()
 	newTokenHash := utils.GenerateRandomString(15)
-	_, err := getInstance().Db.Exec(ctx, `
-			insert into users 
-			(id, email, password, name, tokenhash, created_at, updated_at) 
-			values ($1, $2, $3, $4, $5, $6, $7)
-		`,
+	_, err := getInstance().Db.Exec(ctx, createUserQuery,
 		newId,
 		candidate.Email,
 		candidate.Password,
