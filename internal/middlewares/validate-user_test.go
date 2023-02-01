@@ -35,6 +35,13 @@ func init() {
 		Stack:        "",
 	})
 
+	invalidBodyContent := utils.UnsafetyToJson(models.ResponseError{
+		Message:      "Invalid body content",
+		Status:       http.StatusBadRequest,
+		InternalCode: 0,
+		Stack:        "",
+	})
+
 	validBodyJson := utils.UnsafetyToJson(models.User{
 		Email:    "test_testovich",
 		Password: "test_testovich",
@@ -50,6 +57,11 @@ func init() {
 			Body:         []byte(`{"email": "test_testovich", "password": ""}`),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: invalidBodyJson,
+		},
+		{
+			Body:         []byte(`test string`),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: invalidBodyContent,
 		},
 		{
 			Body:         []byte(`{"email": "", "password": "test_testovich"}`),

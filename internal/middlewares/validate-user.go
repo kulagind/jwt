@@ -20,7 +20,7 @@ func ValidateUser(next http.Handler) http.Handler {
 
 		var candidate *models.User
 		if err := json.Unmarshal(data, &candidate); err != nil {
-			utils.WriteError(w, err.Error(), http.StatusBadRequest, 0)
+			utils.WriteError(w, "Invalid body content", http.StatusBadRequest, 0)
 			return
 		}
 
