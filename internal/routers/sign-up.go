@@ -14,7 +14,7 @@ import (
 )
 
 func signUp(w http.ResponseWriter, r *http.Request) {
-	candidate := r.Context().Value(models.UserContextToken{}).(models.User)
+	candidate := r.Context().Value(models.UserContextToken{}).(*models.User)
 	hashedPass, err := services.HashPassword(candidate.Password)
 	if err != nil {
 		utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
@@ -25,7 +25,7 @@ func signUp(w http.ResponseWriter, r *http.Request) {
 
 	candidate.Password = hashedPass
 
-	user, err := repo.GetUserRepo().Create(context.Background(), &candidate)
+	user, err := repo.GetUserRepo().Create(context.Background(), candidate)
 	if err != nil {
 		if pg.CheckSqlError(err, pgerrcode.UniqueViolation) {
 			utils.WriteError(w, "User with this email already exists", http.StatusBadRequest, 1)

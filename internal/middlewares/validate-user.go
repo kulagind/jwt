@@ -18,7 +18,7 @@ func ValidateUser(next http.Handler) http.Handler {
 		}
 		r.Body.Close()
 
-		var candidate models.User
+		var candidate *models.User
 		if err := json.Unmarshal(data, &candidate); err != nil {
 			utils.WriteError(w, err.Error(), http.StatusBadRequest, 0)
 			return

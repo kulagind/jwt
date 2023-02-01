@@ -12,7 +12,7 @@ import (
 )
 
 func login(w http.ResponseWriter, r *http.Request) {
-	candidate := r.Context().Value(models.UserContextToken{}).(models.User)
+	candidate := r.Context().Value(models.UserContextToken{}).(*models.User)
 
 	user, err := repo.GetUserRepo().PrivateFindBy(context.Background(), "email", candidate.Email)
 	if err != nil {
@@ -24,7 +24,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if isAuth := services.Authenticate(&candidate, user); !isAuth {
+	if isAuth := services.Authenticate(candidate, user); !isAuth {
 		utils.WriteError(w, "User with this email and password doesn't exist", http.StatusUnauthorized, 2)
 		return
 	}

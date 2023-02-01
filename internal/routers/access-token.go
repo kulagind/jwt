@@ -9,9 +9,9 @@ import (
 )
 
 func updateAccessToken(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(models.UserContextToken{}).(models.User)
+	user := r.Context().Value(models.UserContextToken{}).(*models.User)
 
-	accessToken, err := services.GenerateAccessToken(&user)
+	accessToken, err := services.GenerateAccessToken(user)
 	if err != nil {
 		utils.WriteError(w, err.Error(), http.StatusInternalServerError, 0)
 		return
