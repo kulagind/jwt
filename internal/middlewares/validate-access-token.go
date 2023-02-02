@@ -3,7 +3,6 @@ package middlewares
 import (
 	"context"
 	"jwt/internal/models"
-	"jwt/internal/repo"
 	"jwt/internal/services"
 	"jwt/pkg/helpers/utils"
 	"net/http"
@@ -36,14 +35,7 @@ func ValidateAccessToken(next http.Handler) http.Handler {
 			return
 		}
 
-		var candidate *models.User
-		candidate, err = repo.GetUserRepo().PrivateFindBy(context.Background(), "id", claims.UserID)
-		if err != nil {
-			utils.WriteError(w, "Unauthorized", http.StatusUnauthorized, 3)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), models.UserContextToken{}, candidate)
+		ctx := context.WithValue(r.Context(), models.UserIdContextToken{}, claims.UserID)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)

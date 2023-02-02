@@ -14,6 +14,8 @@ type User struct {
 
 type UserContextToken struct{}
 
+type UserIdContextToken struct{}
+
 type UserResponse struct {
 	Id    string `json:"id"`
 	Email string `json:"email"`

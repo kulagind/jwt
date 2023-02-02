@@ -20,7 +20,7 @@ func HandleRequest(mux *mux.Router) {
 
 	// private API
 	privateRouter := mux.PathPrefix("/private").Subrouter()
-	privateRouter.Use(middlewares.ValidateAccessToken)
+	privateRouter.Use(middlewares.ValidateAccessToken, middlewares.GetUserByAccessToken)
 	usersRouter := privateRouter.PathPrefix("/user").Methods(http.MethodGet).Subrouter()
 	usersRouter.HandleFunc("", getCurrentUser)
 	usersRouter.HandleFunc("/{id}", getUserById)

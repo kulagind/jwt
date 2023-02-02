@@ -22,12 +22,21 @@ func Authenticate(candidate *models.User, user *models.User) bool {
 	return true
 }
 
-func GenerateAccessToken(user *models.User) (string, error) {
+func getExpiration(unit time.Duration, count int64) int64 {
+	return time.Now().Add(time.Duration(count) * unit).Unix()
+}
+
+func GenerateAccessToken(user *models.User, expiration ...int64) (string, error) {
+	expiresAt := getExpiration(time.Minute, 15)
+	if len(expiration) > 0 {
+		expiresAt = getExpiration(time.Minute, expiration[0])
+	}
+
 	claims := models.AccessTokenCustomClaims{
 		UserID:  user.Id,
 		KeyType: "access",
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Minute * 15).Unix(),
+			ExpiresAt: expiresAt,
 		},
 	}
 
@@ -118,7 +127,7 @@ func ParseAccessToken(header string) (*jwt.Token, error) {
 			return pubKey, nil
 		},
 	)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "token is expired by") {
 		return nil, err
 	}
 	return token, nil
@@ -143,7 +152,7 @@ func ParseRefreshToken(refreshToken string) (*jwt.Token, error) {
 			return pubKey, nil
 		},
 	)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "token is expired by") {
 		return nil, err
 	}
 	return token, nil
