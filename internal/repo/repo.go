@@ -1,20 +1,19 @@
 package repo
 
 import (
+	"jwt/pkg/helpers/pg"
 	"sync"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var lock = &sync.Mutex{}
 
 type repo struct {
-	Db *pgxpool.Pool
+	Db *pg.CustomSqlConn
 }
 
 var singleton *repo
 
-func Init(pool *pgxpool.Pool) {
+func Init(pool *pg.CustomSqlConn) {
 	lock.Lock()
 	defer lock.Unlock()
 	if singleton == nil {
