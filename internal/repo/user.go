@@ -70,10 +70,7 @@ func (r *userRepo) UpdateTokenhash(ctx context.Context, user *models.User) error
 }
 
 func (r *userRepo) FindBy(ctx context.Context, field string, value string) (*models.UserResponse, error) {
-	query := fmt.Sprintf(
-		"select id, email, name from users where %s = $1 limit 1;",
-		field,
-	)
+	query := GetQueryFindUserBy(field)
 	user := &models.UserResponse{}
 	err := getInstance().Db.QueryRow(ctx, query, value).Scan(&user.Id, &user.Email, &user.Name)
 	if err != nil {
@@ -82,11 +79,15 @@ func (r *userRepo) FindBy(ctx context.Context, field string, value string) (*mod
 	return user, nil
 }
 
-func (r *userRepo) PrivateFindBy(ctx context.Context, field string, value string) (*models.User, error) {
-	query := fmt.Sprintf(
-		"select id, email, name, password, tokenhash, created_at, updated_at from users where %s = $1 limit 1;",
+func GetQueryFindUserBy(field string) string {
+	return fmt.Sprintf(
+		"select id, email, name from users where %s = $1 limit 1;",
 		field,
 	)
+}
+
+func (r *userRepo) PrivateFindBy(ctx context.Context, field string, value string) (*models.User, error) {
+	query := GetQueryPrivateFindUserBy(field)
 	user := &models.User{}
 	err := getInstance().Db.QueryRow(ctx, query, value).Scan(&user.Id, &user.Email, &user.Name, &user.Password, &user.TokenHash, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
@@ -94,4 +95,11 @@ func (r *userRepo) PrivateFindBy(ctx context.Context, field string, value string
 	}
 
 	return user, nil
+}
+
+func GetQueryPrivateFindUserBy(field string) string {
+	return fmt.Sprintf(
+		"select id, email, name, password, tokenhash, created_at, updated_at from users where %s = $1 limit 1;",
+		field,
+	)
 }
