@@ -8,13 +8,14 @@ import (
 	"net/http"
 )
 
-func GetUserByAccessToken(next http.Handler) http.Handler {
+func GetUserById(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userId := r.Context().Value(models.UserIdContextToken{}).(string)
+		claims := r.Context().Value(models.ClaimsContextToken{}).(*models.RefreshTokenCustomClaims)
 
 		var candidate *models.User
 		candidate, err := repo.GetUserRepo().PrivateFindBy(context.Background(), "id", userId)
-		if err != nil {
+		if err != nil || (claims.TokenHash != "" && claims.TokenHash != candidate.TokenHash) {
 			utils.WriteError(w, "Unauthorized", http.StatusUnauthorized, 3)
 			return
 		}

@@ -16,11 +16,11 @@ func HandleRequest(mux *mux.Router) {
 
 	publicAccessRouter := mux.Methods(http.MethodPost).Subrouter()
 	publicAccessRouter.HandleFunc("/update_access", updateAccessToken)
-	publicAccessRouter.Use(middlewares.ValidateRefreshToken, middlewares.UpdateRefreshTokenIfRequired)
+	publicAccessRouter.Use(middlewares.ValidateRefreshToken, middlewares.UpdateRefreshTokenIfRequired, middlewares.GetUserById)
 
 	// private API
 	privateRouter := mux.PathPrefix("/private").Subrouter()
-	privateRouter.Use(middlewares.ValidateAccessToken, middlewares.GetUserByAccessToken)
+	privateRouter.Use(middlewares.ValidateAccessToken, middlewares.GetUserById)
 	usersRouter := privateRouter.PathPrefix("/user").Methods(http.MethodGet).Subrouter()
 	usersRouter.HandleFunc("", getCurrentUser)
 	usersRouter.HandleFunc("/{id}", getUserById)
