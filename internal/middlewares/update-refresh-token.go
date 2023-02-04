@@ -15,13 +15,14 @@ func UpdateRefreshTokenIfRequired(next http.Handler) http.Handler {
 		oldRefreshToken := r.Context().Value(models.RequiredRenewalContextToken{}).(string)
 		claims := r.Context().Value(models.ClaimsContextToken{}).(*models.RefreshTokenCustomClaims)
 
+		err := repo.GetTokenRepo().CheckRefresh(context.Background(), oldRefreshToken)
+		if err != nil {
+			utils.WriteError(w, "refresh token is blocked", http.StatusUnauthorized, 5)
+			return
+		}
+
 		requiredRenewal := ""
 		if claims.ExpiresAt < time.Now().Local().Unix() {
-			err := repo.GetTokenRepo().CheckRefresh(context.Background(), oldRefreshToken)
-			if err != nil {
-				utils.WriteError(w, "refresh token is blocked", http.StatusUnauthorized, 5)
-				return
-			}
 			requiredRenewal = oldRefreshToken
 		}
 
@@ -45,6 +46,7 @@ func UpdateRefreshTokenIfRequired(next http.Handler) http.Handler {
 			}
 
 			c := services.GetRefreshCookie(newRefreshToken)
+			r.AddCookie(&c)
 			http.SetCookie(w, &c)
 		}
 

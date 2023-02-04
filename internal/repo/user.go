@@ -2,7 +2,9 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"jwt/internal/constants"
 	"jwt/internal/models"
 	"jwt/pkg/helpers/utils"
 	"time"
@@ -38,7 +40,7 @@ func (r *userRepo) Create(
 ) (*models.UserResponse, error) {
 	newId := uuid.NewString()
 	newTokenHash := utils.GenerateRandomString(15)
-	_, err := getInstance().Db.Exec(ctx, createUserQuery,
+	_, err := GetInstance().Db.Exec(ctx, createUserQuery,
 		newId,
 		candidate.Email,
 		candidate.Password,
@@ -59,7 +61,7 @@ func (r *userRepo) Create(
 
 func (r *userRepo) UpdateTokenhash(ctx context.Context, user *models.User) error {
 	tokenhash := utils.GenerateRandomString(15)
-	_, err := getInstance().Db.Exec(ctx, `
+	_, err := GetInstance().Db.Exec(ctx, `
 		update users set tokenhash=$1 where id=$2;
 	`, tokenhash, user.Id)
 	if err != nil {
@@ -72,10 +74,24 @@ func (r *userRepo) UpdateTokenhash(ctx context.Context, user *models.User) error
 func (r *userRepo) FindBy(ctx context.Context, field string, value string) (*models.UserResponse, error) {
 	query := GetQueryFindUserBy(field)
 	user := &models.UserResponse{}
-	err := getInstance().Db.QueryRow(ctx, query, value).Scan(&user.Id, &user.Email, &user.Name)
+	rows, err := GetInstance().Db.Query(ctx, query, value)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+	if rows.Next() {
+		err := rows.Scan(&user.Id, &user.Email, &user.Name)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if user.Id == "" {
+		return nil, errors.New(constants.NO_ROWS)
+	}
+
 	return user, nil
 }
 
@@ -89,17 +105,22 @@ func GetQueryFindUserBy(field string) string {
 func (r *userRepo) PrivateFindBy(ctx context.Context, field string, value string) (*models.User, error) {
 	query := GetQueryPrivateFindUserBy(field)
 	user := &models.User{}
-	rows, err := getInstance().Db.Query(ctx, query, value)
-	// err := getInstance().Db.QueryRow(ctx, query, value).Scan(&user.Id, &user.Email, &user.Name, &user.Password, &user.TokenHash, &user.CreatedAt, &user.UpdatedAt)
+	rows, err := GetInstance().Db.Query(ctx, query, value)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	for rows.Next() {
+	if rows.Next() {
 		err := rows.Scan(&user.Id, &user.Email, &user.Name, &user.Password, &user.TokenHash, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if user.Id == "" {
+		return nil, errors.New(constants.NO_ROWS)
 	}
 
 	return user, nil

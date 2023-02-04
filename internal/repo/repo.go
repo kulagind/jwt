@@ -13,14 +13,30 @@ type repo struct {
 
 var singleton *repo
 
-func Init(pool *pg.CustomSqlConn) {
+func Init(pool *pg.CustomSqlConn) func() {
 	lock.Lock()
 	defer lock.Unlock()
 	if singleton == nil {
 		singleton = &repo{Db: pool}
 	}
+	return destroy
 }
 
-func getInstance() *repo {
+func destroy() {
+	singleton = nil
+}
+
+func GetInstance() *repo {
 	return singleton
+}
+
+func ScanRow(rows *pg.CustomRows, pointers ...interface{}) error {
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(pointers...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

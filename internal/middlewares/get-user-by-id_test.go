@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"errors"
+	"jwt/internal/constants"
 	"jwt/internal/models"
 	"jwt/internal/repo"
 	"jwt/pkg/helpers/pg"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/driftprogramming/pgxpoolmock"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,8 +31,9 @@ func TestGettingUserMiddleware(t *testing.T) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	repo.Init(conn)
+	d := repo.Init(conn)
 	defer conn.Close()
+	defer d()
 
 	userId := "test_testovich_id"
 	userTokenHash := utils.GenerateRandomString(15)
@@ -105,13 +106,13 @@ func TestGettingUserMiddleware(t *testing.T) {
 		}
 		req = req.WithContext(ctx)
 
-		var rows pgx.Rows
-		err := errors.New("Not found")
+		rows := pgxpoolmock.NewRows([]string{}).ToPgxRows()
+		err := errors.New(constants.NO_ROWS)
 		if test.UserId == user.Id {
 			rows = pgxpoolmock.NewRows([]string{"id", "email", "name", "password", "tokenhash", "created_at", "updated_at"}).AddRow(userId, user.Email, "name", user.Password, user.TokenHash, time.Now(), time.Now()).ToPgxRows()
 			err = nil
 		}
-		conn.Mock.EXPECT().Query(gomock.Any(), gomock.Any(), test.UserId).Return(rows, err)
+		conn.Mock.EXPECT().Query(gomock.Any(), gomock.Any(), test.UserId).Return(rows, err).Times(1)
 
 		mw := GetUserById(handleGettingUser(t))
 		mw.ServeHTTP(res, req)

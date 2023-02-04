@@ -22,14 +22,14 @@ func Authenticate(candidate *models.User, user *models.User) bool {
 	return true
 }
 
-func getExpiration(unit time.Duration, count int64) int64 {
+func GetExpiration(unit time.Duration, count int64) int64 {
 	return time.Now().Add(time.Duration(count) * unit).Unix()
 }
 
 func GenerateAccessToken(user *models.User, expiration ...int64) (string, error) {
-	expiresAt := getExpiration(time.Minute, 15)
+	expiresAt := GetExpiration(time.Minute, 15)
 	if len(expiration) > 0 {
-		expiresAt = getExpiration(time.Minute, expiration[0])
+		expiresAt = GetExpiration(time.Minute, expiration[0])
 	}
 
 	claims := models.AccessTokenCustomClaims{
@@ -57,13 +57,18 @@ func GenerateAccessToken(user *models.User, expiration ...int64) (string, error)
 	return token.SignedString(signKey)
 }
 
-func GenerateRefreshToken(user *models.User) (string, error) {
+func GenerateRefreshToken(user *models.User, expiration ...int64) (string, error) {
+	expiresAt := GetExpiration(time.Hour, 24*7)
+	if len(expiration) > 0 {
+		expiresAt = GetExpiration(time.Hour, expiration[0])
+	}
+
 	claims := models.RefreshTokenCustomClaims{
 		UserID:    user.Id,
 		KeyType:   "refresh",
 		TokenHash: user.TokenHash,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 24 * 7).Unix(),
+			ExpiresAt: expiresAt,
 		},
 	}
 

@@ -93,6 +93,9 @@ func NewConnection(poolConfig *pgxpool.Config) (*CustomSqlConn, error) {
 
 func CheckSqlError(err error, code string) bool {
 	var pgErr *pgconn.PgError
+	if err == nil {
+		return false
+	}
 	if errors.As(err, &pgErr) || err.Error() == code {
 		return true
 	}
