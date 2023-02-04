@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/driftprogramming/pgxpoolmock"
+	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -24,7 +26,8 @@ type CustomSqlConn struct {
 	Exec     func(ctx context.Context, sql string, args ...any) (interface{}, error)
 	QueryRow func(ctx context.Context, sql string, args ...any) *CustomRow
 	Query    func(ctx context.Context, sql string, args ...any) (*CustomRows, error)
-	Mock     sqlmock.Sqlmock
+	Mock     *pgxpoolmock.MockPgxPool
+	Close    func()
 }
 
 type CustomRow struct {
@@ -32,11 +35,10 @@ type CustomRow struct {
 }
 
 type CustomRows struct {
-	Close     func()
-	CloseMock func() error
-	Next      func() bool
-	Err       func() error
-	Scan      func(dest ...any) error
+	Close func()
+	Next  func() bool
+	Err   func() error
+	Scan  func(dest ...any) error
 }
 
 func NewPoolConfig(cfg *Config) (*pgxpool.Config, error) {
@@ -97,33 +99,35 @@ func CheckSqlError(err error, code string) bool {
 	return false
 }
 
-func NewMockConnection() (*CustomSqlConn, error) {
-	conn, mock, err := sqlmock.New()
-	if err != nil {
-		return nil, err
-	}
+func NewMockConnection(t *testing.T) (*CustomSqlConn, error) {
+	ctrl := gomock.NewController(t)
+
+	mock := pgxpoolmock.NewMockPgxPool(ctrl)
 
 	return &CustomSqlConn{
 		Exec: func(ctx context.Context, sql string, args ...any) (interface{}, error) {
-			return conn.Exec(sql, args...)
+			return mock.Exec(ctx, sql, args...)
 		},
 		Query: func(ctx context.Context, sql string, args ...any) (*CustomRows, error) {
-			rows, err := conn.Query(sql, args...)
+			rows, err := mock.Query(ctx, sql, args...)
 			if err != nil {
 				return nil, err
 			}
 			return &CustomRows{
-				CloseMock: rows.Close,
-				Next:      rows.Next,
-				Err:       rows.Err,
-				Scan:      rows.Scan,
+				Close: rows.Close,
+				Next:  rows.Next,
+				Err:   rows.Err,
+				Scan:  rows.Scan,
 			}, nil
 		},
 		QueryRow: func(ctx context.Context, sql string, args ...any) *CustomRow {
 			return &CustomRow{
-				Scan: conn.QueryRow(sql, args...).Scan,
+				Scan: mock.QueryRow(ctx, sql, args...).Scan,
 			}
 		},
 		Mock: mock,
+		Close: func() {
+			ctrl.Finish()
+		},
 	}, nil
 }

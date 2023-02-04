@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"errors"
 	"jwt/internal/models"
 	"jwt/internal/repo"
 	"jwt/pkg/helpers/pg"
@@ -12,6 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/driftprogramming/pgxpoolmock"
+	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,11 +27,12 @@ type getUserTestCase struct {
 }
 
 func TestGettingUserMiddleware(t *testing.T) {
-	conn, err := pg.NewMockConnection()
+	conn, err := pg.NewMockConnection(t)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	repo.Init(conn)
+	defer conn.Close()
 
 	userId := "test_testovich_id"
 	userTokenHash := utils.GenerateRandomString(15)
@@ -37,14 +42,6 @@ func TestGettingUserMiddleware(t *testing.T) {
 		Password:  "test_testovich",
 		TokenHash: userTokenHash,
 	}
-
-	conn.Mock.ExpectBegin()
-	conn.Mock.ExpectQuery("^select (+.) from users").WillReturnRows(
-		conn.Mock.NewRows(
-			[]string{"id", "email", "name", "password", "tokenhash", "created_at", "updated_at"},
-		).AddRow(user.Id, user.Email, "", user.Password, user.TokenHash, time.Now(), time.Now()),
-	)
-	conn.Mock.ExpectCommit()
 
 	invalidResponse := utils.UnsafetyToJson(models.ResponseError{
 		Message:      "Unauthorized",
@@ -107,6 +104,14 @@ func TestGettingUserMiddleware(t *testing.T) {
 			ctx = context.WithValue(ctx, models.ClaimsContextToken{}, test.Claims)
 		}
 		req = req.WithContext(ctx)
+
+		var rows pgx.Rows
+		err := errors.New("Not found")
+		if test.UserId == user.Id {
+			rows = pgxpoolmock.NewRows([]string{"id", "email", "name", "password", "tokenhash", "created_at", "updated_at"}).AddRow(userId, user.Email, "name", user.Password, user.TokenHash, time.Now(), time.Now()).ToPgxRows()
+			err = nil
+		}
+		conn.Mock.EXPECT().Query(gomock.Any(), gomock.Any(), test.UserId).Return(rows, err)
 
 		mw := GetUserById(handleGettingUser(t))
 		mw.ServeHTTP(res, req)

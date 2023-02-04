@@ -89,9 +89,17 @@ func GetQueryFindUserBy(field string) string {
 func (r *userRepo) PrivateFindBy(ctx context.Context, field string, value string) (*models.User, error) {
 	query := GetQueryPrivateFindUserBy(field)
 	user := &models.User{}
-	err := getInstance().Db.QueryRow(ctx, query, value).Scan(&user.Id, &user.Email, &user.Name, &user.Password, &user.TokenHash, &user.CreatedAt, &user.UpdatedAt)
+	rows, err := getInstance().Db.Query(ctx, query, value)
+	// err := getInstance().Db.QueryRow(ctx, query, value).Scan(&user.Id, &user.Email, &user.Name, &user.Password, &user.TokenHash, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&user.Id, &user.Email, &user.Name, &user.Password, &user.TokenHash, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return user, nil
