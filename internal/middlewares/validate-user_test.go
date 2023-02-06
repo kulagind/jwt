@@ -12,12 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type userBody struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	OddField string `json:"oddField"`
-}
-
 type testCase struct {
 	Body                 []byte
 	ExpectedCode         int
