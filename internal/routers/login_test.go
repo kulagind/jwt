@@ -2,15 +2,23 @@ package routers
 
 import (
 	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"jwt/internal/constants"
 	"jwt/internal/models"
 	"jwt/internal/repo"
+	"jwt/internal/services"
 	"jwt/pkg/helpers/pg"
 	"jwt/pkg/helpers/utils"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/driftprogramming/pgxpoolmock"
+	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,6 +28,12 @@ type loginTestCase struct {
 	body         []byte
 	expectedBody []byte
 	email        string
+	password     string
+}
+
+func init() {
+	services.LoadEnv()
+	os.Setenv("APP_MODE", "testing")
 }
 
 func TestLogin(t *testing.T) {
@@ -41,58 +55,84 @@ func TestLogin(t *testing.T) {
 		Stack:        "",
 	})
 
-	validResponse := utils.UnsafetyToJson(models.TokensResponse{
-		AccessToken: models.AccessToken{
-			Access_token: "",
-		},
-	})
+	email := "test_testovich"
+	password := "test_testovich"
 
 	testCases := []loginTestCase{
 		{
-			body:         []byte(`{"email": "test_testovich", "password": "test_testovich"}`),
-			email:        "test_testovich",
+			body:         []byte(fmt.Sprintf(`{"email": "%s", "password": "%s"}`, email, password)),
+			email:        email,
+			password:     password,
 			expectedCode: http.StatusOK,
-			expectedBody: validResponse,
+			expectedBody: []byte(""),
 		},
 		{
-			body:         []byte(`{"email": "test_testovich", "password": ""}`),
-			email:        "test_testovich",
+			body:         []byte(fmt.Sprintf(`{"email": "%s", "password": "%s"}`, email, "")),
+			email:        email,
+			password:     "",
 			expectedCode: http.StatusUnauthorized,
 			expectedBody: userNotFoundResponse,
 		},
 		{
-			body:         []byte(`{"email": "", "password": "test_testovich"}`),
+			body:         []byte(fmt.Sprintf(`{"email": "%s", "password": "%s"}`, "", password)),
 			email:        "",
+			password:     password,
 			expectedCode: http.StatusUnauthorized,
 			expectedBody: userNotFoundResponse,
 		},
 		{
-			body:         []byte(`{"email": "test_testovich"}`),
-			email:        "test_testovich",
+			body:         []byte(fmt.Sprintf(`{"email": "%s"}`, email)),
+			email:        email,
 			expectedCode: http.StatusUnauthorized,
 			expectedBody: userNotFoundResponse,
 		},
 		{
-			body:         []byte(`{"password": "test_testovich"}`),
+			body:         []byte(fmt.Sprintf(`{"password": "%s"}`, password)),
 			email:        "",
+			password:     password,
 			expectedCode: http.StatusUnauthorized,
 			expectedBody: userNotFoundResponse,
 		},
 	}
 
-	// rows := pgxpoolmock.NewRows([]string{}).ToPgxRows()
-	// sqlErr := errors.New(constants.NO_ROWS)
-
 	for _, test := range testCases {
-		// if test.expectedCode == http.StatusOK {
-		// 	sqlErr = nil
-		// 	rows = pgxpoolmock.NewRows([]string{"id", "email", "name", "password", "tokenhash", "created_at", "updated_at"}).AddRow("test_testovich", "test_testovich", "name", "test_testovich", "test_testovich", time.Now(), time.Now()).ToPgxRows()
-		// }
-		// conn.Mock.EXPECT().Query(gomock.Any(), gomock.Any(), test.email).Return(rows, sqlErr).Times(1)
-		// conn.Mock.EXPECT().Exec(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+		rows := pgxpoolmock.NewRows([]string{}).ToPgxRows()
+		sqlErr := errors.New(constants.NO_ROWS)
+
+		hashedPass, err := services.HashPassword(test.password)
+		assert.Nil(t, err, "Testing login")
+
+		user := &models.User{
+			Id:       test.email,
+			Email:    test.email,
+			Password: hashedPass,
+		}
+
+		candidate := &models.User{
+			Email:    test.email,
+			Password: test.password,
+		}
+
+		if test.expectedCode == http.StatusOK {
+			sqlErr = nil
+			rows = pgxpoolmock.NewRows([]string{"id", "email", "name", "password", "tokenhash", "created_at", "updated_at"}).AddRow(user.Id, user.Email, user.Name, user.Password, user.TokenHash, user.CreatedAt, user.UpdatedAt).ToPgxRows()
+
+			token, err := services.GenerateAccessToken(user)
+			assert.Nil(t, err, "Testing login")
+
+			test.expectedBody = utils.UnsafetyToJson(models.TokensResponse{
+				AccessToken: models.AccessToken{
+					Access_token: token,
+				},
+			})
+		}
+		conn.Mock.EXPECT().Query(gomock.Any(), gomock.Any(), user.Email).Return(rows, sqlErr).Times(1)
+		conn.Mock.EXPECT().Exec(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).MaxTimes(1)
 
 		req, err := http.NewRequest("POST", "/login", bytes.NewBuffer(test.body))
 		assert.Nil(t, err, "Testing login")
+
+		req = req.WithContext(context.WithValue(req.Context(), models.UserContextToken{}, candidate))
 
 		res := httptest.NewRecorder()
 		mux.ServeHTTP(res, req)
